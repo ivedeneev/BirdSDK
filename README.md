@@ -20,7 +20,7 @@ BirdSDK.verbose = true // set true to be able to see logs of SDK. Default is fal
 ### Periodic locations update
 
 ```swift
-    BirdSDK.shared.startUpdatingLocation(interval: 3) // select locations update
+BirdSDK.shared.startUpdatingLocation(interval: 3) // select locations update
 ```
 
 ### Manual locations update
@@ -34,11 +34,11 @@ try await BirdSDK.shared.manuallyUpdateLocation() // Note, that manual locations
 
 # (For reviewer) Limitations / assumptions:
 
-- SDK supports aync/await but was implemented using plain old callbacks to support earlier versions of iOS.
+- SDK supports aync/await but implemented using callbacks to support earlier versions of iOS.
 - User must provide locations update interval. Default update interval is also provided (30 min)
 - Authorization process is hidden from the users of SDK. And happens 'automatically'
-- No 'logging out'
-- If sending location to server fails it stops periodic updates, because most likely this error in unrecoverable and it doesnt make sence to continue trying to send locations
+- No 'logging out' but periodic location updates could be stopped
+- Periodic updates are stopped in case of client errors because that would mean that SDK is broken and this error is unrecoverable. It wourld be stopped in case of network errors
 - CLLocationManager errors are not handled
 - Some parts of SDK implemented 'naively' to save time; unit tests coverage is not complete for the same reason
 - If user explicitly denied location it is treated as a regular unhappy flow without any special promt

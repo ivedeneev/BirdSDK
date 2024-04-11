@@ -42,7 +42,11 @@ final class LocationRepositoryImpl: LocationRepository {
                 }
                 
                 self.privateUpdateLocation { result in
-                    if (try? result.get()) == nil {
+                    switch result {
+                    case .success:
+                        break
+                    case .failure(let error):
+                        guard error.code != .network else { break }
                         self.stopSendingLocation()
                     }
                     didSend(result)
