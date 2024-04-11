@@ -5,7 +5,3 @@ struct AuthResponse: Decodable {
     let expiresAt: String
     let refreshToken: String?
 }
-
-struct BackendError: Decodable {
-    let error: String
-}

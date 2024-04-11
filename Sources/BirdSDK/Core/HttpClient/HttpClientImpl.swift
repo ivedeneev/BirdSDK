@@ -26,7 +26,7 @@ final class HttpClientImpl: HttpClient {
                     }
                     
                     guard let response = response as? HTTPURLResponse, let data else {
-                        throw BirdSDKError(code: .network, message: "Bad server response")
+                        throw BirdSDKError(code: .network, message: "Bad server response or data is missing")
                     }
                     
                     let statusCode = response.statusCode
@@ -63,6 +63,7 @@ final class HttpClientImpl: HttpClient {
         completion: @escaping ((Result<T, BirdSDKError>) -> Void))
     {
         guard let refreshToken = storage.refreshToken else {
+            BirdLogger.log(msg: "Attempted to refresh auth token but refresh token is missing")
             completion(.failure(BirdSDKError(code: .request, message: "No refresh token")))
             return
         }
@@ -71,7 +72,9 @@ final class HttpClientImpl: HttpClient {
             case .success(let response):
                 self.storage.authToken = response.accessToken
                 self.send(request: originalRequest, allowRetry: false, completion: completion)
+                BirdLogger.log(msg: "Refeshed auth token")
             case .failure(let error):
+                BirdLogger.log(msg: "FailedRefeeshed auth token")
                 completion(.failure(error))
             }
         }

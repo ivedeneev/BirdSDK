@@ -4,7 +4,7 @@ enum HttpMethod: String {
     case post = "POST"
 }
 
-typealias CompletionBlock<T: Decodable> = (Result<T, BirdSDKError>) -> Void
+typealias CompletionBlock<T> = (Result<T, BirdSDKError>) -> Void
 
 public struct EmptyResponse: Decodable {}
 

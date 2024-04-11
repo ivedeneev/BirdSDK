@@ -1,7 +1,7 @@
 import Foundation
 
 protocol AuthRepository {
-    func auth(apikey: String, completion: @escaping CompletionBlock<AuthResponse>)
+    func authIfNeeded(apiKey: String?, completion: @escaping CompletionBlock<Void>)
 }
 
 final class AuthRepositoryImpl: AuthRepository {
@@ -12,20 +12,39 @@ final class AuthRepositoryImpl: AuthRepository {
     init(httpClient: HttpClient = HttpClientImpl(), storage: Storage = StorageImpl()) {
         self.httpClient = httpClient
         self.storage = storage
+        
+        storage.authToken = nil
+        storage.refreshToken = nil
     }
     
-    func auth(apikey: String, completion: @escaping CompletionBlock<AuthResponse>) {
-        httpClient.send(request: .auth(apiKey: apikey)) { [weak self] (result: Result<AuthResponse, BirdSDKError>) in
+    func authIfNeeded(apiKey: String?, completion: @escaping CompletionBlock<Void>) {
+        guard let apiKey else {
+            BirdLogger.log(msg: "No API key provided. Make sure you set API key by calling `setApiKey` method of BirdSDK")
+            completion(.failure(.apiKeyIsMissing))
+            return
+        }
+        
+        guard storage.authToken == nil else {
+            BirdLogger.log(msg: "Skipping loggin in...")
+            completion(.success(Void()))
+            return
+        }
+        
+        BirdLogger.log(msg: "Loggin in...")
+        httpClient.send(request: .auth(apiKey: apiKey)) { [weak self] (result: Result<AuthResponse, BirdSDKError>) in
             guard let self else { return }
             switch result {
             case .success(let authResponse):
-                self.storage.authToken = authResponse.accessToken
-                self.storage.refreshToken = authResponse.refreshToken
+                self.storeAccessToren(response: authResponse)
+                completion(.success(Void()))
             case .failure(let error):
-                break
+                completion(.failure(error))
             }
-            
-            completion(result)
         }
+    }
+    
+    private func storeAccessToren(response: AuthResponse) {
+        storage.authToken = response.accessToken
+        storage.refreshToken = response.refreshToken
     }
 }

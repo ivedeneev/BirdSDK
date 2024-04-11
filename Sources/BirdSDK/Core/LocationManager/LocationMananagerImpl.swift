@@ -8,6 +8,7 @@ final class LocationMananagerImpl: NSObject, LocationManager {
 
     private let locationManager: CLLocationManager
     private var getLocationCompletion: ((CLLocationCoordinate2D) -> Void)?
+    private var permissionCompletion: ((Bool) -> Void)?
     
     init(locationManager: CLLocationManager = .init()) {
         self.locationManager = locationManager
@@ -15,7 +16,8 @@ final class LocationMananagerImpl: NSObject, LocationManager {
         locationManager.delegate = self
     }
     
-    func requestLocation() {
+    func requestPermission(completion: @escaping (Bool) -> Void) {
+        permissionCompletion = nil
         let status: CLAuthorizationStatus
         if #available(iOS 14.0, *) {
             status = locationManager.authorizationStatus
@@ -25,20 +27,22 @@ final class LocationMananagerImpl: NSObject, LocationManager {
         
         switch status {
         case .notDetermined:
+            permissionCompletion = completion
             locationManager.requestWhenInUseAuthorization()
         case .restricted:
-            //TODO: throw an error?
+            completion(false)
             break
         case .denied:
             // go to settings
+            completion(false)
             break
         default:
-            locationManager.requestLocation()
+            completion(true)
         }
     }
     
-    func getLocation(completion: @escaping (CLLocationCoordinate2D) -> Void) {
-        requestLocation()
+    func requestLocation(completion: @escaping (CLLocationCoordinate2D) -> Void) {
+        locationManager.requestLocation()
         getLocationCompletion = completion
     }
 }
@@ -52,22 +56,13 @@ extension LocationMananagerImpl: CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        
+        guard status != .notDetermined else { return }
+        permissionCompletion?(status == .authorizedWhenInUse)
+        permissionCompletion = nil
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        // более понятное описание ошибки
-//        if let clError = error as? CLError {
-//            switch clError.code {
-//            case CLError.locationUnknown:
-//                log("Неизвестная локация", type: .error)
-//            case CLError.denied:
-//                log("Доступ к локации запрещен", type: .error)
-//            default:
-//                log("Неизвестная ошибка", type: .error)
-//            }
-//        } else {
-//            log("Неизвестная ошибка", type: .error)
-//        }
+        // TODO: handle errors.
+        BirdLogger.log(msg: error.localizedDescription)
     }
 }
