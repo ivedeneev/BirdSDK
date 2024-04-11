@@ -21,6 +21,12 @@ final class LocationMananagerImpl: NSObject, LocationManager {
     }
     
     func requestPermission(completion: @escaping (Bool) -> Void) {
+        guard locationServicesEnabled else {
+            BirdLogger.log(msg: "Location services are not enabled")
+            completion(false)
+            return
+        }
+        
         let status: CLAuthorizationStatus
         if #available(iOS 14.0, *) {
             status = locationManager.authorizationStatus
@@ -38,7 +44,7 @@ final class LocationMananagerImpl: NSObject, LocationManager {
             completion(false)
             break
         case .denied:
-            // go to settings
+            BirdLogger.log(msg: "User explicitly denied location permissions. You might want to show ")
             completion(false)
             break
         default:
@@ -47,7 +53,6 @@ final class LocationMananagerImpl: NSObject, LocationManager {
     }
     
     func requestLocation(completion: @escaping (CLLocationCoordinate2D) -> Void) {
-        
         locationsLock.withLock {
             locationManager.requestLocation()
             locationCompletions.append(completion)
@@ -70,16 +75,13 @@ extension LocationMananagerImpl: CLLocationManagerDelegate {
         guard status != .notDetermined else { return }
         
         permissionsLock.withLock {
-            permissionCompletions.forEach { f in
-                f(status == .authorizedWhenInUse)
-            }
-        
+            permissionCompletions.forEach { $0(status == .authorizedWhenInUse) }
             permissionCompletions.removeAll()
         }
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        // TODO: handle errors.
+        // TODO: handle errors
         BirdLogger.log(msg: error.localizedDescription)
     }
 }

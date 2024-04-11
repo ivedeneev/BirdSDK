@@ -1,8 +1,8 @@
 import Foundation
 
 public struct BirdSDKError: Error {
-    let code: Code
-    let message: String
+    public let code: Code
+    public let message: String
     
     public enum Code: String {
         case decoding

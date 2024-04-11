@@ -1,5 +1,4 @@
 import Foundation
-//import CoreLocation
 
 final class LocationRepositoryImpl: LocationRepository {
     
@@ -30,34 +29,41 @@ final class LocationRepositoryImpl: LocationRepository {
             
             self.locationManager.requestPermission { granted in
                 guard granted else {
-                    BirdLogger.log(msg: "Location permission got denied")
+                    let error = BirdSDKError(code: .client, message: "Location permission are denied")
+                    BirdLogger.log(error: error)
+                    didSend(.failure(error))
                     return
                 }
                 
-                let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] timer in
-                    self?.privateUpdateLocation(completion: didSend)
+                DispatchQueue.main.async { //TODO: remove main.async (for some reason timer doesnt fire in tests)
+                    self.timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { timer in
+                        self.privateUpdateLocation(completion: didSend)
+                    }
                 }
                 
-                self.privateUpdateLocation(completion: didSend)
-                
-                self.timer = timer
-                let runLoop = RunLoop.current
-                runLoop.add(timer, forMode: .common)
-                runLoop.run()
+                self.privateUpdateLocation { result in
+                    if (try? result.get()) == nil {
+                        self.stopSendingLocation()
+                    }
+                    didSend(result)
+                }
             }
         }
     }
     
     func sendLocation(completion: @escaping CompletionBlock<Void>) {
-        locationManager.requestPermission { [weak self] granted in
-            guard granted else {
-                let error = BirdSDKError(code: .client, message: "Location permission got denied")
-                BirdLogger.log(error: error)
-                completion(.failure(error))
-                return
+        locationQueue.async { [weak self] in
+            guard let self else { return }
+            self.locationManager.requestPermission { granted in
+                guard granted else {
+                    let error = BirdSDKError(code: .client, message: "Location permission are denied")
+                    BirdLogger.log(error: error)
+                    completion(.failure(error))
+                    return
+                }
+                
+                self.privateUpdateLocation(completion: completion)
             }
-            
-            self?.privateUpdateLocation(completion: completion)
         }
     }
     
@@ -74,7 +80,6 @@ final class LocationRepositoryImpl: LocationRepository {
                 case .success:
                     completion(.success(Void()))
                 case .failure(let error):
-                    self.stopSendingLocation()
                     completion(.failure(error))
                 }
             }
@@ -83,5 +88,6 @@ final class LocationRepositoryImpl: LocationRepository {
     
     func stopSendingLocation() {
         timer?.invalidate()
+        timer = nil
     }
 }

@@ -16,7 +16,6 @@ final class AuthRepositoryImpl: AuthRepository {
         authQueue.async { [weak self] in
             guard let self = self else { return }
             guard let apiKey else {
-                BirdLogger.log(msg: "No API key provided. Make sure you set API key by calling `setApiKey` method of BirdSDK")
                 completion(.failure(.apiKeyIsMissing))
                 return
             }

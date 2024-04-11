@@ -1,7 +1,6 @@
 import Foundation
 
-struct AuthResponse: Decodable {
+struct AuthResponse: Codable, Equatable {
     let accessToken: String
-    let expiresAt: String
     let refreshToken: String?
 }

@@ -1,5 +1,5 @@
 import Foundation
 
-struct BackendError: Decodable {
+struct BackendError: Codable, Equatable {
     let error: String
 }

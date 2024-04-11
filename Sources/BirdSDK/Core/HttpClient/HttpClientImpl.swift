@@ -1,12 +1,12 @@
 import Foundation
 
 final class HttpClientImpl: HttpClient {
-    private let urlSession: URLSession
+    private let urlSession: URLSessionProtocol
     private let storage: Storage
     private let requestBuilder: RequestBuilder
     
     init(
-        urlSession: URLSession = .init(configuration: .default),
+        urlSession: URLSessionProtocol = URLSession(configuration: .default),
         storage: Storage = StorageImpl(),
         requestBuilder: RequestBuilder = RequestBuilderImpl()
     ) {
@@ -37,12 +37,12 @@ final class HttpClientImpl: HttpClient {
                         self.refreshToken(originalRequest: request, completion: completion)
                     } else if 400..<500 ~= statusCode {
                         let errorModel = try JSONDecoder().decode(BackendError.self, from: data)
-                        throw BirdSDKError(code: .network, message: errorModel.error)
+                        throw BirdSDKError(code: .network, message: "HTTP code \(statusCode). \(errorModel.error)")
                     } else {
                         throw BirdSDKError(code: .network, message: String(data: data, encoding: .utf8) ?? "Unknown error")
                     }
-                } catch is DecodingError {
-                    completion(.failure(BirdSDKError(code: .network, message: "Error parsing response")))
+                } catch let error as DecodingError {
+                    completion(.failure(BirdSDKError(code: .client, message: error.localizedDescription)))
                 } catch let error as BirdSDKError {
                     completion(.failure(error))
                 } catch {
