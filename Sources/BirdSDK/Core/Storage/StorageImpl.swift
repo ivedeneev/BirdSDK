@@ -1,33 +1,30 @@
-//
-//  File.swift
-//  
-//
-//  Created by Igor Vedeneev on 11/04/2024.
-//
-
 import Foundation
 
 private let ITEM_IS_EXISTS_STATUS_CODE = -25299
+private let authTokenKey = "com.birdsdk.authTokenKey"
+private let refreshTokenKey = "com.birdsdk.refreshTokenKey"
 
+
+// Naive implementation of storage using Keychain
 final class StorageImpl: Storage {
     
     var authToken: String? {
         get {
-            getString(for: "authToken")
+            getString(for: authTokenKey)
         }
         
         set {
-            set(value: newValue, key: "authToken")
+            set(value: newValue, key: authTokenKey)
         }
     }
     
     var refreshToken: String? {
         get {
-            getString(for: "refreshToken")
+            getString(for: refreshTokenKey)
         }
         
         set {
-            set(value: newValue, key: "refreshToken")
+            set(value: newValue, key: refreshTokenKey)
         }
     }
     

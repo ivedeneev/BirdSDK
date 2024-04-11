@@ -11,7 +11,7 @@ final class RequestBuilderImpl: RequestBuilder {
     func urlRequest(for request: Request) throws -> URLRequest {
         let baseUrl = URL(string: "https://dummy-api-mobile.api.sandbox.bird.one")
         guard let url = URL(string: request.path, relativeTo: baseUrl) else {
-            throw BirdSDKError(code: .request, message: "Incorrect URL")
+            throw BirdSDKError(code: .request, message: "Incorrect server URL")
         }
         
         do {

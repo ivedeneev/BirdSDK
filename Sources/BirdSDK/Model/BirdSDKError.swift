@@ -14,11 +14,3 @@ public struct BirdSDKError: Error {
     static var apiKeyIsMissing = BirdSDKError(code: .client, message: "API key is missing")
     static var unknown = BirdSDKError(code: .network, message: "Unknown error")
 }
-
-//public enum BirdSDKError: Error {
-//    case backend(String)
-//    case network(Error)
-//    case unknown
-//    case client(String)
-//    
-//}

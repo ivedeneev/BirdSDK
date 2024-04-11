@@ -67,6 +67,8 @@ final class HttpClientImpl: HttpClient {
             completion(.failure(BirdSDKError(code: .request, message: "No refresh token")))
             return
         }
+        
+        BirdLogger.log(msg: "Refreshing token...")
         send(request: .refresh(refreshToken: refreshToken), allowRetry: false) { (result: Result<AuthResponse, BirdSDKError>) in
             switch result {
             case .success(let response):

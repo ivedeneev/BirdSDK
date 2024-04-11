@@ -9,7 +9,8 @@ public protocol BirdSDKDelegate: AnyObject {
 }
 
 public class BirdSDK {
-
+    
+    /// Enables or disabled logs in SDK. Default is false
     public static var verbose: Bool = false {
         didSet {
             BirdLogger.verbose = verbose
@@ -32,27 +33,23 @@ public class BirdSDK {
         self.apiKey = apiKey
     }
     
+    /// Caputture user location and send it to server with given interval
+    /// - Parameter interval: send interval in seconds
     public func startUpdatingLocation(interval: TimeInterval) {
         authIfNeeded { [weak self] in
-            self?.locationRepository.startUpdatingLocation(interval: interval) { (result: Result<Void, BirdSDKError>) in
+            self?.locationRepository.startSendingLocation(interval: interval) { (result: Result<Void, BirdSDKError>) in
                 DispatchQueue.main.async { [weak self] in
-                    guard let self else { return }
-                    let success = (try? result.get()) != nil
-                    BirdLogger.log(msg: "Sent location. Success: \(success)")
-                    switch result {
-                    case .success:
-                        self.delegate?.didSendLocationAutomatically(sdk: self)
-                    case .failure(let error):
-                        self.delegate?.didFailToSendLocationAutomatically(sdk: self, error: error)
-                    }
+                    self?.obtainPeriodicLocationUpdateResult(result: result)
                 }
             }
         }
     }
     
-    public func updateLocation(completion: @escaping (Result<Void, BirdSDKError>) -> Void) {
+    /// Manually request and send location to the server
+    /// - Parameter completion: completion handler
+    public func manuallyUpdateLocation(completion: @escaping (Result<Void, BirdSDKError>) -> Void) {
         authIfNeeded { [weak self] in
-            self?.locationRepository.updateLocation { result in
+            self?.locationRepository.sendLocation { result in
                 DispatchQueue.main.async {
                     completion(result)
                 }
@@ -61,11 +58,11 @@ public class BirdSDK {
     }
     
     public func stopUpdatingLocation() {
-        locationRepository.stopUpdatingLocation()
+        locationRepository.stopSendingLocation()
     }
     
-    private func authIfNeeded(completion: @escaping () -> Void) {        
-        authRepository.authIfNeeded(apiKey: apiKey) { result in
+    private func authIfNeeded(completion: @escaping () -> Void) {
+        authRepository.authIfNeeded(apiKey: apiKey) { [weak self] result in
             switch result {
             case .success:
                 completion()
@@ -75,13 +72,22 @@ public class BirdSDK {
             }
         }
     }
+    
+    private func obtainPeriodicLocationUpdateResult(result: Result<Void, BirdSDKError>) {
+        switch result {
+        case .success:
+            delegate?.didSendLocationAutomatically(sdk: self)
+        case .failure(let error):
+            delegate?.didFailToSendLocationAutomatically(sdk: self, error: error)
+        }
+    }
 }
 
 @available(iOS 13.0.0, *)
 public extension BirdSDK {
-    func updateLocation() async throws {
+    func manuallyUpdateLocation() async throws {
         _ = try await withCheckedThrowingContinuation { continuation in
-            updateLocation { result in
+            manuallyUpdateLocation { result in
                 continuation.resume(with: result)
             }
         }

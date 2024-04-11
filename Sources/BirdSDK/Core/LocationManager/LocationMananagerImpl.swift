@@ -7,8 +7,12 @@ final class LocationMananagerImpl: NSObject, LocationManager {
     }
 
     private let locationManager: CLLocationManager
-    private var getLocationCompletion: ((CLLocationCoordinate2D) -> Void)?
-    private var permissionCompletion: ((Bool) -> Void)?
+    
+    private var locationCompletions = Array<((CLLocationCoordinate2D) -> Void)>()
+    private var locationsLock = NSLock()
+    
+    private var permissionCompletions = Array<((Bool) -> Void)>()
+    private var permissionsLock = NSLock()
     
     init(locationManager: CLLocationManager = .init()) {
         self.locationManager = locationManager
@@ -17,7 +21,6 @@ final class LocationMananagerImpl: NSObject, LocationManager {
     }
     
     func requestPermission(completion: @escaping (Bool) -> Void) {
-        permissionCompletion = nil
         let status: CLAuthorizationStatus
         if #available(iOS 14.0, *) {
             status = locationManager.authorizationStatus
@@ -27,8 +30,10 @@ final class LocationMananagerImpl: NSObject, LocationManager {
         
         switch status {
         case .notDetermined:
-            permissionCompletion = completion
-            locationManager.requestWhenInUseAuthorization()
+            permissionsLock.withLock {
+                locationManager.requestWhenInUseAuthorization()
+                permissionCompletions.append(completion)
+            }
         case .restricted:
             completion(false)
             break
@@ -42,8 +47,11 @@ final class LocationMananagerImpl: NSObject, LocationManager {
     }
     
     func requestLocation(completion: @escaping (CLLocationCoordinate2D) -> Void) {
-        locationManager.requestLocation()
-        getLocationCompletion = completion
+        
+        locationsLock.withLock {
+            locationManager.requestLocation()
+            locationCompletions.append(completion)
+        }
     }
 }
 
@@ -51,14 +59,23 @@ extension LocationMananagerImpl: CLLocationManagerDelegate {
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.first else { return }
-        getLocationCompletion?(location.coordinate)
-        getLocationCompletion = nil
+        
+        locationsLock.withLock {
+            locationCompletions.forEach { $0(location.coordinate) }
+            locationCompletions.removeAll()
+        }
     }
 
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         guard status != .notDetermined else { return }
-        permissionCompletion?(status == .authorizedWhenInUse)
-        permissionCompletion = nil
+        
+        permissionsLock.withLock {
+            permissionCompletions.forEach { f in
+                f(status == .authorizedWhenInUse)
+            }
+        
+            permissionCompletions.removeAll()
+        }
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
