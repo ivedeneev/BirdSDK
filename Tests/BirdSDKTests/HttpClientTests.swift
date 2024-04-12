@@ -19,6 +19,7 @@ final class HttpClientTests: XCTestCase {
         
         let expected = AuthResponse(accessToken: "1", refreshToken: "1")
         urlSession.setupResults(data: expected, statusCode: 200, error: nil)
+        XCTAssertNotNil(urlSession.result, "Mock response wasnt set")
         
         sut.send(request: .auth(apiKey: ""), allowRetry: true) { (result: Result<AuthResponse, BirdSDKError>) in
             switch result {

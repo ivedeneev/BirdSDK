@@ -35,10 +35,13 @@ final class LocationRepositoryImpl: LocationRepository {
                     return
                 }
                 
-                DispatchQueue.main.async { //TODO: remove main.async (for some reason timer doesnt fire in tests)
-                    self.timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { timer in
-                        self.privateUpdateLocation(completion: didSend)
-                    }
+                self.timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { timer in
+                    self.privateUpdateLocation(completion: didSend)
+                }
+                
+                if let timer = self.timer, !Thread.isMainThread {
+                    RunLoop.current.add(timer, forMode: .default)
+                    RunLoop.current.run()
                 }
                 
                 self.privateUpdateLocation { result in

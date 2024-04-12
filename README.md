@@ -34,7 +34,8 @@ try await BirdSDK.shared.manuallyUpdateLocation() // Note, that manual locations
 
 # (For reviewer) Limitations / assumptions:
 
-- SDK supports aync/await but implemented using callbacks to support earlier versions of iOS.
+- Concurrent authorizations are not allowed
+- SDK implemented using callbacks to support earlier versions of iOS. ()
 - User must provide locations update interval. Default update interval is also provided (30 min)
 - Authorization process is hidden from the users of SDK. And happens 'automatically'
 - No 'logging out' but periodic location updates could be stopped
@@ -43,6 +44,7 @@ try await BirdSDK.shared.manuallyUpdateLocation() // Note, that manual locations
 - Some parts of SDK implemented 'naively' to save time; unit tests coverage is not complete for the same reason
 - If user explicitly denied location it is treated as a regular unhappy flow without any special promt
 - Network Requests cancellation is not handled
+- Manual location updates doesnt trigger delegate (up to discussion)
 
 ## To add in production
 - Docs in `.docc` format
