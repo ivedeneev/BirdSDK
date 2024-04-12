@@ -24,11 +24,11 @@ final class LocationRepositoryTests: XCTestCase {
     
     func test_WhenGotLocation_SendManualLocationSuccedds() {
         let exp = XCTestExpectation(description: #function)
+        var expected: Result<Void, BirdSDKError>?
         
         httpClient.result = .success(EmptyResponse())
         locationManager.permissionGranted = true
         locationManager.currentLocation = .init(latitude: 1, longitude: 1)
-        var expected: Result<Void, BirdSDKError>?
         
         sut.sendLocation { result in
             expected = result
@@ -41,6 +41,7 @@ final class LocationRepositoryTests: XCTestCase {
     
     func test_WhenGotLocation_PeriodicLocationUpdatesFiresMoreThenOnce() {
         let exp = XCTestExpectation(description: #function)
+        var timesFired = 0
         
         httpClient.result = .success(EmptyResponse())
         locationManager.permissionGranted = true
@@ -52,8 +53,6 @@ final class LocationRepositoryTests: XCTestCase {
         sut.sendLocation { result in
             XCTAssertNotNil(try? result.get())
         }
-        
-        var timesFired = 0
         
         sut.startSendingLocation(interval: interval) { result in
             timesFired += 1
@@ -69,11 +68,10 @@ final class LocationRepositoryTests: XCTestCase {
     
     func test_WhenNoLocationPermission_LocationDidntSent() {
         let exp = XCTestExpectation(description: #function)
+        var expected: Result<Void, BirdSDKError>?
         
         httpClient.result = .success(EmptyResponse())
         locationManager.permissionGranted = false
-        locationManager.currentLocation = .init(latitude: 1, longitude: 1)
-        var expected: Result<Void, BirdSDKError>?
         
         sut.sendLocation { result in
             expected = result

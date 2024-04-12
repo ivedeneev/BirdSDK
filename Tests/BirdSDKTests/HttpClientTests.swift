@@ -16,8 +16,8 @@ final class HttpClientTests: XCTestCase {
     
     func testSendRequest() {
         let exp = XCTestExpectation(description: #function)
-        
         let expected = AuthResponse(accessToken: "1", refreshToken: "1")
+        
         urlSession.setupResults(data: expected, statusCode: 200, error: nil)
         XCTAssertNotNil(urlSession.result, "Mock response wasnt set")
         
