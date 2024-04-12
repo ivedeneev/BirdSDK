@@ -3,7 +3,7 @@
 Bird SDK sends user's location to Bird's server. It can location both periodically with given interval and on demand.
 
 ## Installation
-Add the following line to your `Package.swift`
+Add the following line to your `Package.swift` or add it manually via Xcode
 
 ```
 .package(url: "https://github.com/ivedeneev/BirdSDK", branch: "main")
